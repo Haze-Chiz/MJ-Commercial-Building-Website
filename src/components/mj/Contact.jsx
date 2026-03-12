@@ -1,12 +1,12 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import emailjs from "emailjs-com";
 import { motion } from "framer-motion";
-import { Mail, Phone, MapPin, Send, Loader2, CheckCircle, XCircle } from "lucide-react";
+import { Mail, Phone, MapPin, Send, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { base44 } from "@/api/base44Client";
 
 export default function Contact() {
   const [sending, setSending] = useState(false);
@@ -18,6 +18,10 @@ export default function Contact() {
     message: "",
   });
 
+  useEffect(() => {
+    emailjs.init("JsysdDCjX0aT7qSID"); // your EmailJS public key
+  }, []);
+
   const handleChange = (field, value) => {
     setForm((prev) => ({ ...prev, [field]: value }));
   };
@@ -27,25 +31,19 @@ export default function Contact() {
     if (!form.name || !form.email) return;
     setSending(true);
 
-    const body = `
-New inquiry from MJ Commercial Building website:
-
-Name: ${form.name}
-Phone: ${form.phone}
-Email: ${form.email}
-Interested In: ${form.interest}
-Message: ${form.message}
-    `.trim();
-
-    await base44.integrations.Core.SendEmail({
-      to: form.email,
-      subject: `MJ Building Inquiry from ${form.name}`,
-      body,
+    emailjs.sendForm(
+      "service_099e2er", // Service ID
+      "template_5twwyed", // Template ID
+      e.target
+    ).then(() => {
+      toast.success("✅ Inquiry sent successfully!");
+      setForm({ name: "", phone: "", email: "", interest: "", message: "" });
+      setSending(false);
+    }, (err) => {
+      toast.error("❌ Failed to send inquiry. Please try again.");
+      console.error(err);
+      setSending(false);
     });
-
-    toast.success("Inquiry sent successfully!");
-    setForm({ name: "", phone: "", email: "", interest: "", message: "" });
-    setSending(false);
   };
 
   return (
@@ -122,6 +120,7 @@ Message: ${form.message}
 
               <Input
                 placeholder="Full Name"
+                name="name"
                 value={form.name}
                 onChange={(e) => handleChange("name", e.target.value)}
                 required
@@ -129,6 +128,7 @@ Message: ${form.message}
               />
               <Input
                 placeholder="Phone Number"
+                name="phone"
                 value={form.phone}
                 onChange={(e) => handleChange("phone", e.target.value)}
                 className="h-12"
@@ -136,6 +136,7 @@ Message: ${form.message}
               <Input
                 type="email"
                 placeholder="Email Address"
+                name="email"
                 value={form.email}
                 onChange={(e) => handleChange("email", e.target.value)}
                 required
@@ -144,6 +145,7 @@ Message: ${form.message}
               <Select
                 value={form.interest}
                 onValueChange={(val) => handleChange("interest", val)}
+                name="interest"
               >
                 <SelectTrigger className="h-12">
                   <SelectValue placeholder="Interested In" />
@@ -156,6 +158,7 @@ Message: ${form.message}
               </Select>
               <Textarea
                 placeholder="Your message..."
+                name="message"
                 value={form.message}
                 onChange={(e) => handleChange("message", e.target.value)}
                 className="min-h-[120px] resize-none"
